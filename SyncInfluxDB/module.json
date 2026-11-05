@@ -1,0 +1,14 @@
+{
+    "id": "{20D2A412-2EBB-41E1-BB50-90E251E0FF23}",
+    "name": "Sync InfluxDB",
+    "type": 4,
+    "vendor": "",
+    "aliases": [
+        "Synchronize to InfluxDB"
+    ],
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+    "prefix": "SINF",
+    "url": "https://github.com/hamza-abo/SyncInfluxDB"
+}

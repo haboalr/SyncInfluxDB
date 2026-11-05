@@ -1,0 +1,711 @@
+{
+    "elements": [
+        {
+            "type": "Label",
+            "name": "ConnectionStatus",
+            "caption": "",
+            "visible": false
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "InfluxDB connection",
+            "items": [
+                {
+                    "type": "CheckBox",
+                    "name": "Active",
+                    "caption": "Active"
+                },
+                {
+                    "type": "Select",
+                    "name": "APIVersion",
+                    "caption": "InfluxDB version",
+                    "onChange": "IPS_RequestAction($id, 'APIVersion', $APIVersion);",
+                    "options": [
+                        {
+                            "caption": "InfluxDB 1.x",
+                            "value": 1
+                        },
+                        {
+                            "caption": "InfluxDB 2.x / Cloud (or 3.x via v2 API)",
+                            "value": 2
+                        },
+                        {
+                            "caption": "InfluxDB 3 Core / Enterprise",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "URL",
+                    "caption": "URL (e.g. http://influxdb:8086)",
+                    "width": "400px"
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "SSLDontVerify",
+                    "caption": "Don't verify certificate"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "Organization",
+                    "caption": "Organization"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "Bucket",
+                    "caption": "Bucket / Database"
+                },
+                {
+                    "type": "PasswordTextBox",
+                    "name": "Token",
+                    "caption": "API token"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "Username",
+                    "caption": "Username"
+                },
+                {
+                    "type": "PasswordTextBox",
+                    "name": "Password",
+                    "caption": "Password"
+                },
+                {
+                    "type": "RowLayout",
+                    "items": [
+                        {
+                            "type": "NumberSpinner",
+                            "name": "Interval",
+                            "caption": "Interval",
+                            "suffix": "seconds",
+                            "minimum": 10
+                        },
+                        {
+                            "type": "Button",
+                            "name": "TestButton",
+                            "caption": "Test connection",
+                            "onClick": "SINF_TestConnection($id);"
+                        },
+                        {
+                            "type": "Button",
+                            "name": "SyncButton",
+                            "caption": "Sync now",
+                            "onClick": "SINF_Sync($id);"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Write options",
+            "items": [
+                {
+                    "type": "ValidationTextBox",
+                    "name": "Measurement",
+                    "caption": "Default measurement"
+                },
+                {
+                    "type": "Select",
+                    "name": "InitialSync",
+                    "caption": "First sync of a new variable",
+                    "options": [
+                        {
+                            "caption": "Transfer complete archive history",
+                            "value": 0
+                        },
+                        {
+                            "caption": "Only values logged from now on",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "type": "Select",
+                    "name": "Format",
+                    "caption": "Identification format",
+                    "onChange": "IPS_RequestAction($id, 'Format', $Format);",
+                    "options": [
+                        {
+                            "caption": "Custom",
+                            "value": 0
+                        },
+                        {
+                            "caption": "BKS (Hochschule Biberach / SEB)",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "FormatTags",
+                    "caption": "Split BKS identification into separate tags"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "BatchSize",
+                    "caption": "Lines per write request",
+                    "minimum": 100,
+                    "maximum": 50000
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "MaxValuesPerRun",
+                    "caption": "Max. values per sync run (backfill throttle)",
+                    "minimum": 1000
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "Compress",
+                    "caption": "gzip request body"
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "AutoEnableLogging",
+                    "caption": "Enable archive logging and set aggregation type for listed variables"
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Meters",
+            "items": [
+                {
+                    "type": "Label",
+                    "caption": "Meters and zones become tags. Save and reopen the form to use new entries in the variable list."
+                },
+                {
+                    "type": "List",
+                    "name": "Meters",
+                    "add": true,
+                    "delete": true,
+                    "sort": {
+                        "column": "Number",
+                        "direction": "ascending"
+                    },
+                    "columns": [
+                        {
+                            "caption": "Meter Number",
+                            "name": "Number",
+                            "width": "200px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "BKS",
+                            "name": "BKS",
+                            "width": "300px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "Description",
+                            "name": "Description",
+                            "width": "auto",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "Comment",
+                            "name": "Comment",
+                            "width": "200px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Zones",
+            "items": [
+                {
+                    "type": "List",
+                    "name": "Zones",
+                    "add": true,
+                    "delete": true,
+                    "sort": {
+                        "column": "Location",
+                        "direction": "ascending"
+                    },
+                    "columns": [
+                        {
+                            "caption": "Location",
+                            "name": "Location",
+                            "width": "200px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "Usage Area",
+                            "name": "Area",
+                            "width": "110px",
+                            "add": 0,
+                            "edit": {
+                                "type": "NumberSpinner",
+                                "suffix": "m²"
+                            }
+                        },
+                        {
+                            "caption": "Net Area",
+                            "name": "NetArea",
+                            "width": "110px",
+                            "add": 0,
+                            "edit": {
+                                "type": "NumberSpinner",
+                                "suffix": "m²"
+                            }
+                        },
+                        {
+                            "caption": "Economic Unit",
+                            "name": "EconomicUnit",
+                            "width": "150px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "Building Unit",
+                            "name": "BuildingUnit",
+                            "width": "150px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "Building Assignment",
+                            "name": "BuildingAssignment",
+                            "width": "auto",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "Construction Date (YYYY)",
+                            "name": "ConstructionDate",
+                            "width": "140px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox",
+                                "validate": "^([0-9]{4})?$"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "List",
+            "name": "Variables",
+            "caption": "Synchronized variables",
+            "add": true,
+            "delete": true,
+            "rowCount": 15,
+            "sort": {
+                "column": "Ident",
+                "direction": "ascending"
+            },
+            "columns": [
+                {
+                    "caption": "Active",
+                    "name": "Active",
+                    "width": "60px",
+                    "add": true,
+                    "edit": {
+                        "type": "CheckBox"
+                    }
+                },
+                {
+                    "caption": "Identification",
+                    "name": "Ident",
+                    "width": "350px",
+                    "add": "",
+                    "edit": {
+                        "type": "ValidationTextBox"
+                    },
+                    "quickFilter": true
+                },
+                {
+                    "caption": "VariableID",
+                    "name": "VariableID",
+                    "width": "auto",
+                    "add": 0,
+                    "edit": {
+                        "type": "SelectVariable"
+                    }
+                },
+                {
+                    "caption": "Aggregation Type",
+                    "name": "AggregationType",
+                    "width": "130px",
+                    "add": 0,
+                    "edit": {
+                        "type": "Select",
+                        "options": [
+                            {
+                                "caption": "Average",
+                                "value": 0
+                            },
+                            {
+                                "caption": "Counter",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                {
+                    "caption": "Unit",
+                    "name": "Unit",
+                    "width": "70px",
+                    "add": "",
+                    "edit": {
+                        "type": "Select",
+                        "options": [
+                            {
+                                "caption": "None",
+                                "value": ""
+                            },
+                            {
+                                "caption": "°C",
+                                "value": "°C"
+                            },
+                            {
+                                "caption": "K",
+                                "value": "K"
+                            },
+                            {
+                                "caption": "Wh",
+                                "value": "Wh"
+                            },
+                            {
+                                "caption": "kWh",
+                                "value": "kWh"
+                            },
+                            {
+                                "caption": "MWh",
+                                "value": "MWh"
+                            },
+                            {
+                                "caption": "W",
+                                "value": "W"
+                            },
+                            {
+                                "caption": "kW",
+                                "value": "kW"
+                            },
+                            {
+                                "caption": "MW",
+                                "value": "MW"
+                            },
+                            {
+                                "caption": "mA",
+                                "value": "mA"
+                            },
+                            {
+                                "caption": "A",
+                                "value": "A"
+                            },
+                            {
+                                "caption": "V",
+                                "value": "V"
+                            },
+                            {
+                                "caption": "°",
+                                "value": "°"
+                            },
+                            {
+                                "caption": "%rf",
+                                "value": "%rf"
+                            },
+                            {
+                                "caption": "l",
+                                "value": "l"
+                            },
+                            {
+                                "caption": "m³",
+                                "value": "m³"
+                            },
+                            {
+                                "caption": "m³/h",
+                                "value": "m³/h"
+                            },
+                            {
+                                "caption": "g/m³",
+                                "value": "g/m³"
+                            },
+                            {
+                                "caption": "mbar",
+                                "value": "mbar"
+                            },
+                            {
+                                "caption": "km/h",
+                                "value": "km/h"
+                            },
+                            {
+                                "caption": "m/s",
+                                "value": "m/s"
+                            },
+                            {
+                                "caption": "1/s",
+                                "value": "1/s"
+                            },
+                            {
+                                "caption": "mm",
+                                "value": "mm"
+                            },
+                            {
+                                "caption": "%",
+                                "value": "%"
+                            },
+                            {
+                                "caption": "VA",
+                                "value": "VA"
+                            },
+                            {
+                                "caption": "pr",
+                                "value": "pr"
+                            },
+                            {
+                                "caption": "bar",
+                                "value": "bar"
+                            },
+                            {
+                                "caption": "Pa",
+                                "value": "Pa"
+                            },
+                            {
+                                "caption": "kPa",
+                                "value": "kPa"
+                            },
+                            {
+                                "caption": "ppm",
+                                "value": "ppm"
+                            },
+                            {
+                                "caption": "lx",
+                                "value": "lx"
+                            },
+                            {
+                                "caption": "l/h",
+                                "value": "l/h"
+                            },
+                            {
+                                "caption": "l/min",
+                                "value": "l/min"
+                            },
+                            {
+                                "caption": "kg",
+                                "value": "kg"
+                            },
+                            {
+                                "caption": "h",
+                                "value": "h"
+                            },
+                            {
+                                "caption": "Hz",
+                                "value": "Hz"
+                            },
+                            {
+                                "caption": "var",
+                                "value": "var"
+                            },
+                            {
+                                "caption": "kvar",
+                                "value": "kvar"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "caption": "Meter",
+                    "name": "Meter",
+                    "width": "120px",
+                    "add": "",
+                    "edit": {
+                        "type": "Select",
+                        "options": [
+                            {
+                                "caption": "(none)",
+                                "value": ""
+                            }
+                        ]
+                    }
+                },
+                {
+                    "caption": "Tariff",
+                    "name": "Tariff",
+                    "width": "120px",
+                    "add": "",
+                    "visible": false,
+                    "edit": {
+                        "type": "ValidationTextBox",
+                        "validate": "^.{0,100}$"
+                    }
+                },
+                {
+                    "caption": "Zone",
+                    "name": "Zone",
+                    "width": "120px",
+                    "add": "",
+                    "edit": {
+                        "type": "Select",
+                        "options": [
+                            {
+                                "caption": "(none)",
+                                "value": ""
+                            }
+                        ]
+                    }
+                },
+                {
+                    "caption": "Usage Type",
+                    "name": "UsageType",
+                    "width": "150px",
+                    "add": "",
+                    "visible": false,
+                    "edit": {
+                        "type": "ValidationTextBox",
+                        "validate": "^.{0,100}$"
+                    }
+                },
+                {
+                    "caption": "Identification (Legacy)",
+                    "name": "IdentLegacy",
+                    "width": "300px",
+                    "add": "",
+                    "visible": false,
+                    "edit": {
+                        "type": "ValidationTextBox"
+                    }
+                },
+                {
+                    "caption": "Measurement",
+                    "name": "Measurement",
+                    "width": "120px",
+                    "add": "",
+                    "visible": false,
+                    "edit": {
+                        "type": "ValidationTextBox"
+                    }
+                },
+                {
+                    "caption": "Extra tags (key=value, ...)",
+                    "name": "Tags",
+                    "width": "250px",
+                    "add": "",
+                    "edit": {
+                        "type": "ValidationTextBox",
+                        "validate": "^(\\s*[A-Za-z_][A-Za-z0-9_.-]*\\s*=\\s*[^,=]+(\\s*,\\s*[A-Za-z_][A-Za-z0-9_.-]*\\s*=\\s*[^,=]+)*)?\\s*$"
+                    }
+                },
+                {
+                    "caption": "Description",
+                    "name": "Description",
+                    "width": "200px",
+                    "add": "",
+                    "visible": false,
+                    "edit": {
+                        "type": "ValidationTextBox",
+                        "multiline": true,
+                        "width": "600px"
+                    }
+                },
+                {
+                    "caption": "Synced until",
+                    "name": "LastSync",
+                    "width": "150px",
+                    "add": "-"
+                },
+                {
+                    "caption": "State",
+                    "name": "State",
+                    "width": "110px",
+                    "add": "New!"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "type": "RowLayout",
+            "items": [
+                {
+                    "type": "Button",
+                    "caption": "Sync now",
+                    "onClick": "SINF_Sync($id);"
+                },
+                {
+                    "type": "Button",
+                    "caption": "Test connection",
+                    "onClick": "SINF_TestConnection($id);"
+                },
+                {
+                    "type": "PopupButton",
+                    "caption": "Reset sync state",
+                    "popup": {
+                        "caption": "Reset sync state",
+                        "items": [
+                            {
+                                "type": "Label",
+                                "caption": "All selected variables will be re-transferred from the given point in time on the next sync. InfluxDB overwrites identical points, so no duplicates are created."
+                            },
+                            {
+                                "type": "SelectDateTime",
+                                "name": "ResetFrom",
+                                "caption": "Re-sync from"
+                            },
+                            {
+                                "type": "SelectVariable",
+                                "name": "ResetVariable",
+                                "caption": "Variable (none = all)"
+                            },
+                            {
+                                "type": "Button",
+                                "caption": "Reset",
+                                "onClick": "IPS_RequestAction($id, 'ResetFromForm', json_encode(['VariableID' => $ResetVariable, 'From' => $ResetFrom]));",
+                                "confirm": "Reset the sync state?"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "status": [
+        {
+            "code": 102,
+            "icon": "active",
+            "caption": "Sync active"
+        },
+        {
+            "code": 104,
+            "icon": "inactive",
+            "caption": "Sync inactive"
+        },
+        {
+            "code": 200,
+            "icon": "error",
+            "caption": "InfluxDB not reachable or write rejected (see error above)"
+        },
+        {
+            "code": 201,
+            "icon": "error",
+            "caption": "Configuration incomplete"
+        }
+    ]
+}
