@@ -220,22 +220,16 @@ class SyncInfluxDBTest extends TestCase
     {
         $now = time();
         $cases = [
-            "B'A'Ahu02'FanSu'DP (Differenzdruckfühler)/Present Value" =>
-                ['building=B', 'plant=A', 'equip=Ahu02', 'component=FanSu', 'point=DP', "point_path=B'A'Ahu02'FanSu'DP", 'description=Differenzdruckfühler'],
-            "B'A'Ahu02'XCtl'SpTSu.SpErcSu (Zuluftsollwert ERG)/Present Value" =>
-                ['equip=Ahu02', 'component=XCtl', 'block=SpTSu', 'point=SpErcSu', 'description=Zuluftsollwert\ ERG'],
-            "B'A'Ahu02'EEx.HuAbs (Absolute Feuchte)/Present Value" =>
-                ['equip=Ahu02', 'block=EEx', 'point=HuAbs'],
-            "B'A'Ahu02'TSu (Zulufttemperatur)/Present Value" =>
-                ['equip=Ahu02', 'point=TSu', 'description=Zulufttemperatur'],
-            "B'A'Ahu02'AflAbs'AflOa1 (Luftvolumenstrom ODA Aussenluft gefiltert) --> Aussenluft/Present Value" =>
-                ['component=AflAbs', 'point=AflOa1', 'description=Luftvolumenstrom\ ODA\ Aussenluft\ gefiltert,'],
-            "B'C'CGen'SpCOff (Sollwert Kälte AUS)/Present Value" =>
-                ['plant=C', 'equip=CGen', 'point=SpCOff']
+            ["B'A'Ahu02'FanSu'DP (Differenzdruckfühler)/Present Value", ['building=B', 'plant=A', 'equip=Ahu02', 'component=FanSu', 'point=DP', "point_path=B'A'Ahu02'FanSu'DP", 'description=Differenzdruckfühler']],
+            ["B'A'Ahu02'XCtl'SpTSu.SpErcSu (Zuluftsollwert ERG)/Present Value", ['equip=Ahu02', 'component=XCtl', 'block=SpTSu', 'point=SpErcSu', 'description=Zuluftsollwert\ ERG']],
+            ["B'A'Ahu02'EEx.HuAbs (Absolute Feuchte)/Present Value", ['equip=Ahu02', 'block=EEx', 'point=HuAbs']],
+            ["B'A'Ahu02'TSu (Zulufttemperatur)/Present Value", ['equip=Ahu02', 'point=TSu', 'description=Zulufttemperatur']],
+            ["B'A'Ahu02'AflAbs'AflOa1 (Luftvolumenstrom ODA Aussenluft gefiltert) --> Aussenluft/Present Value", ['component=AflAbs', 'point=AflOa1', 'description=Luftvolumenstrom\ ODA\ Aussenluft\ gefiltert,']],
+            ["B'C'CGen'SpCOff (Sollwert Kälte AUS)/Present Value", ['plant=C', 'equip=CGen', 'point=SpCOff']]
         ];
         $rows = [];
         $vars = [];
-        foreach ($cases as $ident => $expected) {
+        foreach ($cases as [$ident, $expected]) {
             $var = $this->createLoggedVariable(VARIABLETYPE_FLOAT, [['TimeStamp' => $now - 100, 'Value' => 1.5]]);
             $vars[$var] = $expected;
             $rows[] = $this->row($var, ['Ident' => $ident]);
