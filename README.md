@@ -1,7 +1,7 @@
 # SyncInfluxDB
 
-[![Check Style](https://github.com/hamza-abo/SyncInfluxDB/workflows/Check%20Style/badge.svg)](https://github.com/hamza-abo/SyncInfluxDB/actions)
-[![Run Tests](https://github.com/hamza-abo/SyncInfluxDB/workflows/Run%20Tests/badge.svg)](https://github.com/hamza-abo/SyncInfluxDB/actions)
+[![Check Style](https://github.com/haboalr/SyncInfluxDB/workflows/Check%20Style/badge.svg)](https://github.com/haboalr/SyncInfluxDB/actions)
+[![Run Tests](https://github.com/haboalr/SyncInfluxDB/workflows/Run%20Tests/badge.svg)](https://github.com/haboalr/SyncInfluxDB/actions)
 
 Symcon library containing the following modules:
 

@@ -31,7 +31,7 @@ Transfers the raw archive values of selected Symcon variables to InfluxDB. Influ
 
 ### 3. Installation
 
-* Module Control → add `https://github.com/hamza-abo/SyncInfluxDB`
+* Module Control → add `https://github.com/haboalr/SyncInfluxDB`
 * Add instance → "Sync InfluxDB"
 
 ### 4. Configuration

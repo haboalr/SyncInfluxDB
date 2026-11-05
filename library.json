@@ -2,7 +2,7 @@
     "id": "{C5BE25A7-3898-43C0-9A1C-13CBAA528822}",
     "name": "SyncInfluxDB",
     "author": "INES - Hochschule Offenburg",
-    "url": "https://github.com/hamza-abo/SyncInfluxDB",
+    "url": "https://github.com/haboalr/SyncInfluxDB",
     "compatibility": {
         "version": "6.0"
     },
