@@ -35,13 +35,16 @@ class SyncInfluxDB extends IPSModule
     // https://regex101.com/r/vP6TqD/3
     private $identFormats = [
         '', // Custom
-        "^([A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)=([_0-9]+)\+([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_0-9]+)([_A-Z])([_0-9]+)\/([A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]*)-([_A-Za-z0-9]*)-([_A-Za-z0-9]*)-([_A-Za-z0-9]*)-([_A-Za-z0-9]*)$"
+        "^([A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)=([_0-9]+)\+([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_0-9]+)([_A-Z])([_0-9]+)\/([A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]*)-([_A-Za-z0-9]*)-([_A-Za-z0-9]*)-([_A-Za-z0-9]*)-([_A-Za-z0-9]*)$",
+        // Desigo / BACnet object path, e.g. B'A'Ahu02'FanSu'DP (Differenzdruckfühler)/Present Value
+        "^[A-Za-z0-9_]+('[A-Za-z0-9_.]+)+"
     ];
 
     // https://regex101.com/r/peWokG/4
     private $bksFormats = [
         '', // Custom
-        "^([A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)=([_0-9]+)\+([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_0-9]+)([_A-Z])([_0-9]+)$"
+        "^([A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_A-Za-z0-9]+)=([_0-9]+)\+([_A-Za-z0-9]+)-([_A-Za-z0-9]+)-([_0-9]+)([_A-Z])([_0-9]+)$",
+        '' // Desigo: no meter validation
     ];
 
     // Regex group -> tag key (same order as SyncMySQL's format table)
@@ -584,7 +587,9 @@ class SyncInfluxDB extends IPSModule
         }
 
         $format = $this->ReadPropertyInteger('Format');
-        if ($format > 0 && $this->ReadPropertyBoolean('FormatTags')) {
+        if ($format == 2 && $this->ReadPropertyBoolean('FormatTags')) {
+            $tags = array_merge($tags, $this->parseDesigoPath($row['Ident'] ?? ''));
+        } elseif ($format == 1 && $this->ReadPropertyBoolean('FormatTags')) {
             if (preg_match('/' . $this->identFormats[$format] . '/', $row['Ident'] ?? '', $matches)) {
                 foreach ($this->formatTagKeys as $group => $key) {
                     $tags[$key] = $matches[$group] ?? '';
@@ -608,6 +613,53 @@ class SyncInfluxDB extends IPSModule
             $key .= ',' . $this->escapeTag((string) $tagKey) . '=' . $this->escapeTag($tagValue);
         }
         return $key;
+    }
+
+    /**
+     * Split a Desigo / BACnet object path into tags.
+     *
+     *   B'A'Ahu02'FanSu'DP (Differenzdruckfühler)/Present Value
+     *     -> building=B, plant=A, equip=Ahu02, component=FanSu, point=DP,
+     *        point_path=B'A'Ahu02'FanSu'DP, description=Differenzdruckfühler
+     *   B'A'Ahu02'XCtl'SpTSu.SpErcSu (...)  -> component=XCtl, block=SpTSu, point=SpErcSu
+     *   B'A'Ahu02'EEx.HuAbs (...)           -> block=EEx, point=HuAbs
+     */
+    private function parseDesigoPath(string $ident): array
+    {
+        if (!preg_match("/^([A-Za-z0-9_]+(?:'[A-Za-z0-9_.]+)+)\\s*(?:\\(([^)]*)\\))?/", trim($ident), $m)) {
+            return [];
+        }
+        $path = $m[1];
+        $segments = explode("'", $path);
+        $last = array_pop($segments);
+
+        $tags = ['point_path' => $path];
+        $names = ['building', 'plant', 'equip'];
+        foreach ($names as $index => $name) {
+            if (count($segments) > $index) {
+                $tags[$name] = $segments[$index];
+            }
+        }
+        if (count($segments) > 3) {
+            $tags['component'] = implode('/', array_slice($segments, 3));
+        }
+
+        $dot = strrpos($last, '.');
+        if ($dot !== false) {
+            $tags['block'] = substr($last, 0, $dot);
+            $tags['point'] = substr($last, $dot + 1);
+        } else {
+            $tags['point'] = $last;
+        }
+
+        if (isset($m[2])) {
+            // Drop annotations like "... -> Fortluft"
+            $description = trim(preg_split('/\\s*-+>/', $m[2])[0]);
+            if ($description !== '') {
+                $tags['description'] = $description;
+            }
+        }
+        return $tags;
     }
 
     private function buildLine(string $seriesKey, $value, int $timestamp): ?string

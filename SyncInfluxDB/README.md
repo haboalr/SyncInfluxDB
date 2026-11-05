@@ -56,8 +56,8 @@ Transfers the raw archive values of selected Symcon variables to InfluxDB. Influ
 | --------------------- | ----------- |
 | Default measurement   | Measurement for all variables without an own measurement (default `symcon`) |
 | First sync of a new variable | Transfer the complete archive history, or only values logged from now on |
-| Identification format | Custom (free text) or BKS (validated) |
-| Split BKS identification into separate tags | Writes `property`, `ifp_room_designation`, `function_identifier`, `data_point`, ... |
+| Identification format | Custom (free text), BKS (validated) or Desigo / BACnet object path |
+| Split identification into separate tags | BKS: writes `property`, `ifp_room_designation`, `function_identifier`, `data_point`, ...<br>Desigo: `B'A'Ahu02'FanSu'DP (Differenzdruckfühler)/Present Value` → `building=B`, `plant=A`, `equip=Ahu02`, `component=FanSu`, `point=DP`, `point_path=B'A'Ahu02'FanSu'DP`, `description=Differenzdruckfühler`; dotted members such as `SpTSu.SpErcSu` give `block=SpTSu`, `point=SpErcSu` |
 | Lines per write request | Batch size (default 5000) |
 | Max. values per sync run | Throttle for backfills; the rest follows in the next run |
 | gzip request body     | Compresses write requests |

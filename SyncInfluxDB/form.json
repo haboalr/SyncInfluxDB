@@ -134,13 +134,17 @@
                         {
                             "caption": "BKS (Hochschule Biberach / SEB)",
                             "value": 1
+                        },
+                        {
+                            "caption": "Desigo / BACnet object path",
+                            "value": 2
                         }
                     ]
                 },
                 {
                     "type": "CheckBox",
                     "name": "FormatTags",
-                    "caption": "Split BKS identification into separate tags"
+                    "caption": "Split identification into separate tags"
                 },
                 {
                     "type": "NumberSpinner",

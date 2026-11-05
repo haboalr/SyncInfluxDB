@@ -216,6 +216,56 @@ class SyncInfluxDBTest extends TestCase
         $this->assertTrue(strpos($line, 'additional_field_02') === false);
     }
 
+    public function testDesigoPathTags(): void
+    {
+        $now = time();
+        $cases = [
+            "B'A'Ahu02'FanSu'DP (Differenzdruckfühler)/Present Value" =>
+                ['building=B', 'plant=A', 'equip=Ahu02', 'component=FanSu', 'point=DP', "point_path=B'A'Ahu02'FanSu'DP", 'description=Differenzdruckfühler'],
+            "B'A'Ahu02'XCtl'SpTSu.SpErcSu (Zuluftsollwert ERG)/Present Value" =>
+                ['equip=Ahu02', 'component=XCtl', 'block=SpTSu', 'point=SpErcSu', 'description=Zuluftsollwert\ ERG'],
+            "B'A'Ahu02'EEx.HuAbs (Absolute Feuchte)/Present Value" =>
+                ['equip=Ahu02', 'block=EEx', 'point=HuAbs'],
+            "B'A'Ahu02'TSu (Zulufttemperatur)/Present Value" =>
+                ['equip=Ahu02', 'point=TSu', 'description=Zulufttemperatur'],
+            "B'A'Ahu02'AflAbs'AflOa1 (Luftvolumenstrom ODA Aussenluft gefiltert) --> Aussenluft/Present Value" =>
+                ['component=AflAbs', 'point=AflOa1', 'description=Luftvolumenstrom\ ODA\ Aussenluft\ gefiltert,'],
+            "B'C'CGen'SpCOff (Sollwert Kälte AUS)/Present Value" =>
+                ['plant=C', 'equip=CGen', 'point=SpCOff']
+        ];
+        $rows = [];
+        $vars = [];
+        foreach ($cases as $ident => $expected) {
+            $var = $this->createLoggedVariable(VARIABLETYPE_FLOAT, [['TimeStamp' => $now - 100, 'Value' => 1.5]]);
+            $vars[$var] = $expected;
+            $rows[] = $this->row($var, ['Ident' => $ident]);
+        }
+        $id = $this->createInstance(['Format' => 2], $rows);
+        SINF_Sync($id);
+
+        $lines = [];
+        $body = implode("\n", array_column($this->writeRequests(), 'body'));
+        foreach (explode("\n", $body) as $line) {
+            preg_match('/,variableid=(\d+)/', $line, $m);
+            $lines[intval($m[1])] = $line;
+        }
+        foreach ($vars as $var => $expected) {
+            foreach ($expected as $tag) {
+                $this->assertStringContainsString($tag, $lines[$var]);
+            }
+        }
+        // No component tag when the point sits directly below the unit
+        $tsu = array_search(['equip=Ahu02', 'point=TSu', 'description=Zulufttemperatur'], $vars);
+        $this->assertTrue(strpos($lines[$tsu], 'component=') === false);
+        // All rows pass the format validation
+        $form = json_decode(IPS\InstanceManager::getInstanceInterface($id)->GetConfigurationForm(), true);
+        foreach ($form['elements'] as $element) {
+            if (($element['name'] ?? '') == 'Variables') {
+                $this->assertSame(['OK'], array_values(array_unique(array_column($element['values'], 'State'))));
+            }
+        }
+    }
+
     public function testInfluxDB1And3Endpoints(): void
     {
         $now = time();
