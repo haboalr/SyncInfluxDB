@@ -16,3 +16,7 @@ phpunit tests
 ```
 
 `tests/SyncInfluxDBTest.php` runs the module against a mock InfluxDB HTTP server (`tests/mock/influx.php`, started automatically via `php -S`).
+
+## License
+
+[MIT](LICENSE)
