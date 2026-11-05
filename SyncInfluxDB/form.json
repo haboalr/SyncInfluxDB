@@ -645,6 +645,217 @@
             "type": "RowLayout",
             "items": [
                 {
+                    "type": "PopupButton",
+                    "caption": "Add multiple variables",
+                    "popup": {
+                        "caption": "Add multiple variables",
+                        "items": [
+                            {
+                                "type": "Label",
+                                "caption": "Adds all variables below the selected object. Variables already in the list are skipped. Apply pending changes in the list first."
+                            },
+                            {
+                                "type": "SelectObject",
+                                "name": "BulkParent",
+                                "caption": "Category / instance"
+                            },
+                            {
+                                "type": "CheckBox",
+                                "name": "BulkRecursive",
+                                "caption": "Include all sub-levels",
+                                "value": true
+                            },
+                            {
+                                "type": "CheckBox",
+                                "name": "BulkOnlyLogged",
+                                "caption": "Only variables that are already archived",
+                                "value": false
+                            },
+                            {
+                                "type": "Select",
+                                "name": "BulkAggregation",
+                                "caption": "Aggregation type (if not archived yet)",
+                                "value": 0,
+                                "options": [
+                                    {
+                                        "caption": "Average",
+                                        "value": 0
+                                    },
+                                    {
+                                        "caption": "Counter",
+                                        "value": 1
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "Select",
+                                "name": "BulkUnit",
+                                "caption": "Unit (if not derivable from the profile)",
+                                "value": "",
+                                "options": [
+                                    {
+                                        "caption": "None",
+                                        "value": ""
+                                    },
+                                    {
+                                        "caption": "°C",
+                                        "value": "°C"
+                                    },
+                                    {
+                                        "caption": "K",
+                                        "value": "K"
+                                    },
+                                    {
+                                        "caption": "Wh",
+                                        "value": "Wh"
+                                    },
+                                    {
+                                        "caption": "kWh",
+                                        "value": "kWh"
+                                    },
+                                    {
+                                        "caption": "MWh",
+                                        "value": "MWh"
+                                    },
+                                    {
+                                        "caption": "W",
+                                        "value": "W"
+                                    },
+                                    {
+                                        "caption": "kW",
+                                        "value": "kW"
+                                    },
+                                    {
+                                        "caption": "MW",
+                                        "value": "MW"
+                                    },
+                                    {
+                                        "caption": "mA",
+                                        "value": "mA"
+                                    },
+                                    {
+                                        "caption": "A",
+                                        "value": "A"
+                                    },
+                                    {
+                                        "caption": "V",
+                                        "value": "V"
+                                    },
+                                    {
+                                        "caption": "°",
+                                        "value": "°"
+                                    },
+                                    {
+                                        "caption": "%rf",
+                                        "value": "%rf"
+                                    },
+                                    {
+                                        "caption": "l",
+                                        "value": "l"
+                                    },
+                                    {
+                                        "caption": "m³",
+                                        "value": "m³"
+                                    },
+                                    {
+                                        "caption": "m³/h",
+                                        "value": "m³/h"
+                                    },
+                                    {
+                                        "caption": "g/m³",
+                                        "value": "g/m³"
+                                    },
+                                    {
+                                        "caption": "mbar",
+                                        "value": "mbar"
+                                    },
+                                    {
+                                        "caption": "km/h",
+                                        "value": "km/h"
+                                    },
+                                    {
+                                        "caption": "m/s",
+                                        "value": "m/s"
+                                    },
+                                    {
+                                        "caption": "1/s",
+                                        "value": "1/s"
+                                    },
+                                    {
+                                        "caption": "mm",
+                                        "value": "mm"
+                                    },
+                                    {
+                                        "caption": "%",
+                                        "value": "%"
+                                    },
+                                    {
+                                        "caption": "VA",
+                                        "value": "VA"
+                                    },
+                                    {
+                                        "caption": "pr",
+                                        "value": "pr"
+                                    },
+                                    {
+                                        "caption": "bar",
+                                        "value": "bar"
+                                    },
+                                    {
+                                        "caption": "Pa",
+                                        "value": "Pa"
+                                    },
+                                    {
+                                        "caption": "kPa",
+                                        "value": "kPa"
+                                    },
+                                    {
+                                        "caption": "ppm",
+                                        "value": "ppm"
+                                    },
+                                    {
+                                        "caption": "lx",
+                                        "value": "lx"
+                                    },
+                                    {
+                                        "caption": "l/h",
+                                        "value": "l/h"
+                                    },
+                                    {
+                                        "caption": "l/min",
+                                        "value": "l/min"
+                                    },
+                                    {
+                                        "caption": "kg",
+                                        "value": "kg"
+                                    },
+                                    {
+                                        "caption": "h",
+                                        "value": "h"
+                                    },
+                                    {
+                                        "caption": "Hz",
+                                        "value": "Hz"
+                                    },
+                                    {
+                                        "caption": "var",
+                                        "value": "var"
+                                    },
+                                    {
+                                        "caption": "kvar",
+                                        "value": "kvar"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "Button",
+                                "caption": "Add",
+                                "onClick": "IPS_RequestAction($id, 'BulkAdd', json_encode(['Parent' => $BulkParent, 'Recursive' => $BulkRecursive, 'OnlyLogged' => $BulkOnlyLogged, 'AggregationType' => $BulkAggregation, 'Unit' => $BulkUnit]));"
+                            }
+                        ]
+                    }
+                },
+                {
                     "type": "Button",
                     "caption": "Sync now",
                     "onClick": "SINF_Sync($id);"

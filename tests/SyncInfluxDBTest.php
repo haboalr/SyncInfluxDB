@@ -260,6 +260,61 @@ class SyncInfluxDBTest extends TestCase
         $this->assertSame($var, IPS_GetLink($children[0])['TargetID']);
     }
 
+    public function testAddMultipleVariables(): void
+    {
+        IPS_CreateVariableProfile('Test.Temp', VARIABLETYPE_FLOAT);
+        IPS_SetVariableProfileText('Test.Temp', '', ' °C');
+        IPS_CreateVariableProfile('Test.Odd', VARIABLETYPE_FLOAT);
+        IPS_SetVariableProfileText('Test.Odd', '', ' furlongs');
+
+        // Building / AHU1 / {Supply, Return, Name(string)} ; Building / AHU1 / Fan / Speed ; Building / Meter (already listed)
+        $building = $this->createObject(IPS_CreateCategory(), 'Building', 0);
+        $ahu = $this->createObject(IPS_CreateCategory(), 'AHU1', $building);
+        $supply = $this->createObject(IPS_CreateVariable(VARIABLETYPE_FLOAT), 'Supply', $ahu);
+        IPS_SetVariableCustomProfile($supply, 'Test.Temp');
+        $return = $this->createObject(IPS_CreateVariable(VARIABLETYPE_FLOAT), 'Return', $ahu);
+        IPS_SetVariableCustomProfile($return, 'Test.Odd');
+        $this->createObject(IPS_CreateVariable(VARIABLETYPE_STRING), 'Name', $ahu);
+        $fan = $this->createObject(IPS_CreateCategory(), 'Fan', $ahu);
+        $speed = $this->createObject(IPS_CreateVariable(VARIABLETYPE_INTEGER), 'Speed', $fan);
+        $meter = $this->createObject(IPS_CreateVariable(VARIABLETYPE_FLOAT), 'Meter', $building);
+        AC_SetLoggingStatus($this->archiveID, $meter, true);
+        AC_SetAggregationType($this->archiveID, $meter, 1);
+        AC_SetLoggingStatus($this->archiveID, $supply, true);
+
+        $id = $this->createInstance([], [$this->row($meter)]);
+
+        // Non-recursive, only archived: Meter is listed already -> nothing new from Building itself
+        $this->assertSame('0 variables added, 1 skipped (already listed)', SINF_AddVariables($id, $building, false, true));
+
+        // Recursive: Supply, Return, Speed (string skipped, Meter skipped)
+        $this->assertSame('3 variables added, 1 skipped (already listed)', SINF_AddVariables($id, $building, true, false));
+        $rows = [];
+        foreach (json_decode(IPS_GetProperty($id, 'Variables'), true) as $row) {
+            $rows[$row['VariableID']] = $row;
+        }
+        $this->assertCount(4, $rows);
+        $this->assertSame('AHU1/Supply', $rows[$supply]['Ident']);
+        $this->assertSame('AHU1/Fan/Speed', $rows[$speed]['Ident']);
+        $this->assertSame('°C', $rows[$supply]['Unit']);
+        $this->assertSame('', $rows[$return]['Unit']);
+
+        // Running again adds nothing, and the new rows are synchronized
+        $this->assertSame('0 variables added, 4 skipped (already listed)', SINF_AddVariables($id, $building, true, false));
+        $this->assertEquals(IS_ACTIVE, IPS_GetInstance($id)['InstanceStatus']);
+        $this->assertTrue(AC_GetLoggingStatus($this->archiveID, $speed));
+
+        // Form handler with defaults
+        $id2 = $this->createInstance([], []);
+        ob_start();
+        IPS_RequestAction($id2, 'BulkAdd', json_encode(['Parent' => $ahu, 'Recursive' => false, 'OnlyLogged' => false, 'AggregationType' => 1, 'Unit' => 'kWh']));
+        $this->assertSame('2 variables added, 0 skipped (already listed)', ob_get_clean());
+        $rows = array_column(json_decode(IPS_GetProperty($id2, 'Variables'), true), null, 'VariableID');
+        $this->assertSame('kWh', $rows[$return]['Unit']);      // no usable suffix -> default unit
+        $this->assertSame('°C', $rows[$supply]['Unit']);
+        $this->assertSame(0, $rows[$supply]['AggregationType']); // archived as average -> archive wins over default
+    }
+
     public function testTestConnection(): void
     {
         $id = $this->createInstance([], []);
@@ -290,6 +345,13 @@ class SyncInfluxDBTest extends TestCase
         ], $properties);
         IPS_SetConfiguration($id, json_encode($config));
         IPS_ApplyChanges($id);
+        return $id;
+    }
+
+    private function createObject(int $id, string $name, int $parentID): int
+    {
+        IPS_SetName($id, $name);
+        IPS_SetParent($id, $parentID);
         return $id;
     }
 

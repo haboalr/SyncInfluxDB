@@ -153,6 +153,16 @@ class SyncInfluxDB extends IPSModule
             case 'Format':
                 $this->UpdateFormField('FormatTags', 'visible', ((int) $Value) > 0);
                 break;
+            case 'BulkAdd':
+                $data = json_decode($Value, true);
+                echo $this->bulkAddVariables(
+                    intval($data['Parent'] ?? 0),
+                    (bool) ($data['Recursive'] ?? true),
+                    (bool) ($data['OnlyLogged'] ?? false),
+                    intval($data['AggregationType'] ?? 0),
+                    (string) ($data['Unit'] ?? '')
+                );
+                break;
             case 'ResetFromForm':
                 $data = json_decode($Value, true);
                 $from = json_decode($data['From'] ?? '', true);
@@ -380,6 +390,15 @@ class SyncInfluxDB extends IPSModule
      * Re-transfer data from $Timestamp on. VariableID 0 resets all variables.
      * Timestamp 0 re-transfers the complete archive.
      */
+    /**
+     * Add all variables below $ParentID to the list (scriptable version of "Add multiple variables").
+     * Returns a status message.
+     */
+    public function AddVariables(int $ParentID, bool $Recursive, bool $OnlyLogged)
+    {
+        return $this->bulkAddVariables($ParentID, $Recursive, $OnlyLogged, 0, '');
+    }
+
     public function ResetSyncState(int $VariableID, int $Timestamp)
     {
         $state = $this->readSyncState();
@@ -399,6 +418,138 @@ class SyncInfluxDB extends IPSModule
     public function GetSyncState(): array
     {
         return $this->readSyncState();
+    }
+
+    // ---------------------------------------------------------------------
+    // Bulk add
+    // ---------------------------------------------------------------------
+
+    private function bulkAddVariables(int $parentID, bool $recursive, bool $onlyLogged, int $defaultAggregation, string $defaultUnit): string
+    {
+        if ($parentID <= 0 || !IPS_ObjectExists($parentID)) {
+            return $this->Translate('Please select a category or instance');
+        }
+
+        $archiveID = IPS_GetInstanceListByModuleID(self::ARCHIVE_GUID)[0] ?? 0;
+        $knownUnits = $this->getUnitOptions();
+
+        $rows = $this->getRows();
+        $listed = array_flip(array_map(function ($row)
+        {
+            return intval($row['VariableID'] ?? 0);
+        }, $rows));
+
+        $added = 0;
+        $skipped = 0;
+        foreach ($this->collectVariables($parentID, $recursive) as $variableID => $path) {
+            if (isset($listed[$variableID])) {
+                $skipped++;
+                continue;
+            }
+            $logged = ($archiveID > 0) && AC_GetLoggingStatus($archiveID, $variableID);
+            if ($onlyLogged && !$logged) {
+                continue;
+            }
+            // Strings cannot be stored as float values
+            if (IPS_GetVariable($variableID)['VariableType'] == VARIABLETYPE_STRING) {
+                continue;
+            }
+
+            $unit = $this->unitFromPresentation($variableID);
+            if (!in_array($unit, $knownUnits, true)) {
+                $unit = $defaultUnit;
+            }
+
+            $rows[] = [
+                'Active'          => true,
+                'Ident'           => $path,
+                'VariableID'      => $variableID,
+                'AggregationType' => $logged ? AC_GetAggregationType($archiveID, $variableID) : $defaultAggregation,
+                'Unit'            => $unit,
+                'Meter'           => '',
+                'Tariff'          => '',
+                'Zone'            => '',
+                'UsageType'       => '',
+                'IdentLegacy'     => '',
+                'Measurement'     => '',
+                'Tags'            => '',
+                'Description'     => ''
+            ];
+            $listed[$variableID] = true;
+            $added++;
+        }
+
+        if ($added > 0) {
+            // User-triggered: store the extended list and apply it
+            IPS_SetProperty($this->InstanceID, 'Variables', json_encode($rows));
+            IPS_ApplyChanges($this->InstanceID);
+            $this->ReloadForm();
+        }
+
+        return sprintf($this->Translate('%d variables added, %d skipped (already listed)'), $added, $skipped);
+    }
+
+    /**
+     * VariableID => identification path relative to the selected object, e.g. "AHU1/Supply temperature"
+     */
+    private function collectVariables(int $parentID, bool $recursive, string $prefix = ''): array
+    {
+        $result = [];
+        $children = IPS_GetChildrenIDs($parentID);
+        usort($children, function ($a, $b)
+        {
+            return IPS_GetObject($a)['ObjectPosition'] <=> IPS_GetObject($b)['ObjectPosition'] ?: strcmp(IPS_GetName($a), IPS_GetName($b));
+        });
+        foreach ($children as $childID) {
+            // Never pick up our own links/children
+            if ($childID == $this->InstanceID) {
+                continue;
+            }
+            $name = $prefix . IPS_GetName($childID);
+            if (IPS_VariableExists($childID)) {
+                $result[$childID] = $name;
+            }
+            if ($recursive && IPS_HasChildren($childID) && !IPS_LinkExists($childID)) {
+                $result += $this->collectVariables($childID, true, $name . '/');
+            }
+        }
+        // A variable itself may be selected
+        if ($prefix === '' && IPS_VariableExists($parentID)) {
+            $result = [$parentID => IPS_GetName($parentID)] + $result;
+        }
+        return $result;
+    }
+
+    private function unitFromPresentation(int $variableID): string
+    {
+        $variable = IPS_GetVariable($variableID);
+
+        // Symcon 8 presentations
+        foreach (['VariableCustomPresentation', 'VariablePresentation'] as $key) {
+            $presentation = $variable[$key] ?? [];
+            if (is_array($presentation) && isset($presentation['SUFFIX']) && trim((string) $presentation['SUFFIX']) !== '') {
+                return trim((string) $presentation['SUFFIX']);
+            }
+        }
+
+        // Legacy profiles
+        $profile = $variable['VariableCustomProfile'] !== '' ? $variable['VariableCustomProfile'] : $variable['VariableProfile'];
+        if ($profile !== '' && IPS_VariableProfileExists($profile)) {
+            return trim(IPS_GetVariableProfile($profile)['Suffix']);
+        }
+        return '';
+    }
+
+    private function getUnitOptions(): array
+    {
+        $form = json_decode(file_get_contents(__DIR__ . '/form.json'), true);
+        $list = $this->findElement($form['elements'], 'Variables');
+        foreach ($list['columns'] as $column) {
+            if ($column['name'] == 'Unit') {
+                return array_column($column['edit']['options'], 'value');
+            }
+        }
+        return [];
     }
 
     // ---------------------------------------------------------------------

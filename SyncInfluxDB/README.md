@@ -82,6 +82,8 @@ Transfers the raw archive values of selected Symcon variables to InfluxDB. Influ
 | Synced until  | Timestamp of the last transferred value |
 | State         | OK / Variable missing / Duplicate / Format mismatch / Not logged |
 
+**Add multiple variables** – select a category, instance or variable and add every variable below it in one step (optionally all sub-levels, optionally only already archived ones). The identification is pre-filled with the path relative to the selected object (e.g. `AHU1/Fan/Speed`), the unit is taken from the profile/presentation suffix when it matches a known unit, and the aggregation type from the archive. Variables already in the list and string variables are skipped.
+
 Actions: **Sync now**, **Test connection** (checks credentials and that the bucket/database exists), **Reset sync state** (re-transfer from a point in time, for one or all variables).
 
 ### 5. Data model in InfluxDB
@@ -109,6 +111,9 @@ Transfers all new archive values now.
 
 `void SINF_TestConnection(int $InstanceID);`
 Checks reachability, credentials and bucket/database.
+
+`string SINF_AddVariables(int $InstanceID, int $ParentID, bool $Recursive, bool $OnlyLogged);`
+Adds all variables below `$ParentID` to the list (same as "Add multiple variables") and applies the configuration.
 
 `void SINF_ResetSyncState(int $InstanceID, int $VariableID, int $Timestamp);`
 Re-transfers values from `$Timestamp` on. `$VariableID = 0` resets all variables, `$Timestamp = 0` re-transfers the complete history.
